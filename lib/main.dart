@@ -74,9 +74,10 @@ class _WelcomePageState extends State<WelcomePage> {
             JavascriptChannel(
               name: 'appCaseBridge',
               onMessageReceived: (JavascriptMessage result) async {
-                print(result);
                 var command = result.message;
-                print(command);
+                if (command == "logout") {
+                  print("Deslogear");
+                }
               },
             )
           }),
