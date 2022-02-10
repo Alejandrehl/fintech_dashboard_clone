@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:fintech_dashboard_clone/layout/app_layout.dart';
 import 'package:fintech_dashboard_clone/models/card_details.dart';
 import 'package:fintech_dashboard_clone/models/enums/card_type.dart';
@@ -9,13 +12,14 @@ import 'package:fintech_dashboard_clone/sections/upgrade_pro_section.dart';
 import 'package:fintech_dashboard_clone/sections/your_cards_section.dart';
 import 'package:fintech_dashboard_clone/styles/styles.dart';
 import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
-  runApp(const FintechDasboardApp());
+  runApp(const FintechDashboardApp());
 }
 
-class FintechDasboardApp extends StatelessWidget {
-  const FintechDasboardApp({Key? key}) : super(key: key);
+class FintechDashboardApp extends StatelessWidget {
+  const FintechDashboardApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +29,75 @@ class FintechDasboardApp extends StatelessWidget {
         scaffoldBackgroundColor: Styles.scaffoldBackgroundColor,
         scrollbarTheme: Styles.scrollbarTheme,
       ),
-      home: const HomePage(),
+      home: const WelcomePage(),
+    );
+  }
+}
+
+class WelcomePage extends StatefulWidget {
+  const WelcomePage({Key? key}) : super(key: key);
+
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> {
+  final Completer<WebViewController> _controller =
+      Completer<WebViewController>();
+
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.isAndroid) {
+      WebView.platform = SurfaceAndroidWebView();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.only(
+          top: 40.0,
+          bottom: 20.0,
+        ),
+        child: WebView(
+          initialUrl: 'https://easynight-app.web.app/#/',
+          javascriptMode: JavascriptMode.unrestricted,
+          onWebViewCreated: (WebViewController webViewController) {
+            _controller.complete(webViewController);
+          },
+          onProgress: (int progress) {
+            print('WebView is loading (progress : $progress%)');
+          },
+          javascriptChannels: Set.from({
+            JavascriptChannel(
+              name: 'appCaseBridge',
+              onMessageReceived: (JavascriptMessage result) async {
+                print(result);
+                var command = result.message;
+                print(command);
+              },
+            )
+          }),
+          navigationDelegate: (NavigationRequest request) {
+            if (request.url.startsWith('https://www.youtube.com/')) {
+              print('blocking navigation to $request}');
+              return NavigationDecision.prevent;
+            }
+            print('allowing navigation to $request');
+            return NavigationDecision.navigate;
+          },
+          onPageStarted: (String url) {
+            print('Page started loading: $url');
+          },
+          onPageFinished: (String url) {
+            print('Page finished loading: $url');
+          },
+          gestureNavigationEnabled: true,
+          backgroundColor: const Color(0x00000000),
+        ),
+      ),
     );
   }
 }
